@@ -46,6 +46,27 @@ def parse_data(infile):
     wdates = []             # list of dates data
     wtemperatures = []      # list of temperarture data
 
+    file = open(infile, "r")
+    next(file)
+    for line in file:
+        info = file.readline().split()
+        wdates.append(info[2])
+        wtemperatures.append(float(info[3]))
+
+    file.close()
+
+    #split the date strings
+    for i,date in enumerate(wdates):
+        year = int(date[:4])
+        month = int(date[4:6])
+        day = int(date[5:])
+
+        wdates[i] = {"year": year,
+                "month": month,
+                "day": day}
+
+
+
     return wdates, wtemperatures
 
 
@@ -60,7 +81,42 @@ def calc_mean_std_dev(wdates, wtemp):
     means = []
     std_dev = []
 
+    months = {
+        1: [],
+        2: [],
+        3: [],
+        4: [],
+        5: [],
+        6: [],
+        7: [],
+        8: [],
+        9: [],
+        10: [],
+        11: [],
+        12: [],
+    }
+
+    for i, date in enumerate(wdates):
+        print(date["month"])
+        months[date["month"]].append(float(wtemp[i]))
+
+    for month in months:
+        means.append(np.mean(np.asarray(months[month])))
+        std_dev.append(np.std(np.asarray(months[month])))
+
+
     return means, std_dev
+
+
+def year_truncator(wdates):
+    wyear = []
+    for date in wdates:
+        wyear.append(date["year"])
+
+    return wyear
+
+
+
 
 
 
@@ -94,13 +150,7 @@ def plot_data_task1(wyear, wtemp, month_mean, month_std):
     plt.show()      # display plot
 
 
-def plot_data_task2(xxx):
-    """
-    Create plot for Task 2. Describe in here what you are plotting
-    Also modify the function to take the params you think you will need
-    to plot the requirements.
-    :param: xxx??
-    """
+def plot_data_task2(maxtemps, mintemps, years):
     pass
 
 
@@ -109,11 +159,13 @@ def main(infile):
     wdates, wtemperatures = parse_data(weather_data)
     # Calculate mean and standard dev per month
     month_mean, month_std = calc_mean_std_dev(wdates, wtemperatures)
-    # TODO: Make sure you have a list of:
-    #       1) years, 2) temperature, 3) month_mean, 4) month_std
-    plot_data_task1(wyear, wtemp, month_mean, month_std)
-    # TODO: Create the data you need for this
-    # plot_data_task2(xxx)
+    wyear = year_truncator(wdates)
+
+    print(len(wyear), wyear)
+    print(len(wtemperatures), wtemperatures)
+    plot_data_task1(wyear, wtemperatures, month_mean, month_std)
+
+
 
 
 
