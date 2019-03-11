@@ -28,6 +28,14 @@ def read_wx_data(wx_file, harbor_data):
         wx_data.close()
 
         harbor_data['temp_times'] = int_time(wx_time)
+
+        #filter out error temperature values
+        for i, temp in enumerate(wx_temp):
+            if(abs(temp - wx_temp[i-1]) > 5):
+                #replace it with an interpolated value based on the two nearest temperature values
+                wx_temp[i] = interpolate(wx_temp[i-1], wx_temp[i+1], harbor_data['temp_times'][i-1],harbor_data['temp_times'][i+1],harbor_data['temp_times'][i])
+
+
         harbor_data['temps'] = wx_temp
 
 
@@ -108,6 +116,17 @@ def split_data(harbor_data, ascent_data, descent_data):
     else:
         print("something went wrong comparing times")
 
+    #get rid of the extraneous temperature data, which is useless since it is taking measurements much after altitude has stopped
+    alt_end_time = harbor_data['alt_times'][-1]
+
+    for i, t in enumerate(harbor_data['temp_times']):
+        if(t >= alt_end_time):
+            temp_end_index = i
+            break
+
+    else:
+        print("something went wrong cutting extra temperatures")
+
     ascent_data['alts'] = harbor_data['alts'][:drop_index +1]
     ascent_data['alt_times'] = harbor_data['alt_times'][:drop_index + 1]
     ascent_data['temps'] = harbor_data['temps'][:drop_temp_index +1]
@@ -115,8 +134,8 @@ def split_data(harbor_data, ascent_data, descent_data):
 
     descent_data['alts'] = harbor_data['alts'][drop_index:]
     descent_data['alt_times'] = harbor_data['alt_times'][drop_index:]
-    descent_data['temps'] = harbor_data['temps'][drop_temp_index:]
-    descent_data['temp_times'] = harbor_data['temp_times'][drop_temp_index:]
+    descent_data['temps'] = harbor_data['temps'][drop_temp_index:temp_end_index]
+    descent_data['temp_times'] = harbor_data['temp_times'][drop_temp_index:temp_end_index]
 
 
 
@@ -155,7 +174,7 @@ def get_nearest_times(times, t):
     for i, v in enumerate(times):
         #as list is sorted, the first value for which t < i is the closest value larger than i
         #in my use case, t cannot equal i, so the last value in a sorted list will be the closest value smaller than i
-        if(t < i):
+        if(t < v):
             return i-1 , i
             break
     else:
@@ -181,11 +200,12 @@ def interpolate(alt_1, alt_2, time_1, time_2, t):
     """
 
     #get the slope between the two indexes, altitude vs time
-    slope = (alt_1 - alt_2)/(time_1 - time_2)
+    slope = (alt_2 - alt_1)/(time_2 - time_1)
 
     dtime = t - time_1
 
     dalt = dtime * slope
+
 
     return alt_1 + dalt
 
