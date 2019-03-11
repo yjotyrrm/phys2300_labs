@@ -186,13 +186,46 @@ def interpolate(alt_1, alt_2, time_1, time_2, t):
 
 
 
-def plot_figs(harbor_data):
+def plot_figs(ascent_data, descent_data, harbor_data):
     """
     Plot 2 figures with 2 subplots each.
     :param harbor_data: A dictionary to collect data.
     :return: nothing
     """
-    pass
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.title("temperature vs time")
+    plt.plot(harbor_data['temp_times'], harbor_data['temps'])
+    plt.ylabel("Temperature, F")
+    plt.xlabel("mission elapsed time, seconds")
+
+    plt.subplot(2, 1, 2)
+    plt.title("altitude vs time")
+    plt.plot(harbor_data['alt_times'], harbor_data['alts'])
+    plt.ylabel("altitude, ft")
+    plt.xlabel("mission elapsed time, seconds")
+
+    plt.show()
+
+
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.title("temperature vs altitude on ascent")
+    plt.plot(interpolate_data(ascent_data))
+    plt.ylabel("Altitude, ft")
+    plt.xlabel("Temperature, F")
+
+    plt.subplot(2, 1, 2)
+    plt.title("temperature vs altutude on descent")
+    plt.plot(interpolate_data(descent_data))
+    plt.ylabel("Altitude, ft")
+    plt.xlabel("Temperature, F")
+
+    plt.show()
+
+
+
+
 
 
 def main():
