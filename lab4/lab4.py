@@ -48,9 +48,12 @@ def read_gps_data(gps_file, harbor_data):
         next(gps_data)
         next(gps_data)
         for line in gps_data:
-            info = gps_data.readline().split('    ')
-            gps_time.append((info[0],info[1],info[2]))
-            gps_alt.append(int(info[6]))
+            info = gps_data.readline().split('\t')
+            if(info != [""]):
+                #for some reason the reader will throw in a blank line at the end of the file, this is a workaround
+                gps_time.append((info[0], info[1], info[2]))
+                gps_alt.append(int(info[6]))
+
         gps_data.close()
 
         harbor_data['alt_times'] = int_time(gps_time)
@@ -70,12 +73,11 @@ def int_time(times):
         t_seconds = float(t[2]) - zero_seconds
 
         int_time = (t_hours*3600) + (t_minutes*60) + (t_seconds)
+        int_times.append(int_time)
 
-        int_times.append(t)
+    return int_times
 
-    return t
-
-def split_data(harbor_data, ascent_data, descent_data)
+def split_data(harbor_data, ascent_data, descent_data):
     """
     splits the data into ascending and descending
     :param harbor_data: dictionary for collecting data
@@ -94,11 +96,14 @@ def split_data(harbor_data, ascent_data, descent_data)
 
     drop_alt_time = harbor_data['alt_times'][drop_index]
 
+
     for i, t in enumerate(harbor_data['temp_times']):
         if(t > drop_alt_time):
             drop_temp_index = (i-1)
+            break
         elif(t == drop_alt_time):
             drop_temp_index = i
+            break
 
     else:
         print("something went wrong comparing times")
@@ -127,7 +132,13 @@ def interpolate_data(data):
             alts.append(data['alts'][data['alt_times'].index(t)])
         else:
             ind1, ind2 = get_nearest_times(data['alt_times'], t)
-            alts.append(interpolate(data['alts'][ind1], data['alts'][ind2], data['alt_times'][ind1], data['alt_times'][ind2], t))
+            ind1 = int(ind1)
+            ind2 = int(ind2)
+            alt1 = data['alts'][ind1]
+            alt2 =  data['alts'][ind2]
+            time1 = data['alt_times'][ind1]
+            time2 =  data['alt_times'][ind2]
+            alts.append(interpolate(alt1, alt2, time1, time2, t))
 
     return temps, alts
 
@@ -141,8 +152,7 @@ def get_nearest_times(times, t):
     :param t: the specific time you are trying to find
     :return: two list indices, containing the two closest time values to t
     """
-
-    for i in times:
+    for i, v in enumerate(times):
         #as list is sorted, the first value for which t < i is the closest value larger than i
         #in my use case, t cannot equal i, so the last value in a sorted list will be the closest value smaller than i
         if(t < i):
@@ -209,15 +219,18 @@ def plot_figs(ascent_data, descent_data, harbor_data):
 
 
     plt.figure()
-    plt.subplot(2, 1, 1)
+    plt.subplot(1, 2, 1)
     plt.title("temperature vs altitude on ascent")
-    plt.plot(interpolate_data(ascent_data))
+    temps, alts = interpolate_data(ascent_data)
+    plt.plot(temps,alts)
     plt.ylabel("Altitude, ft")
     plt.xlabel("Temperature, F")
 
-    plt.subplot(2, 1, 2)
+    plt.subplot(1, 2, 2)
     plt.title("temperature vs altutude on descent")
-    plt.plot(interpolate_data(descent_data))
+    temps, alts = interpolate_data(descent_data)
+
+    plt.plot(temps, alts)
     plt.ylabel("Altitude, ft")
     plt.xlabel("Temperature, F")
 
@@ -240,8 +253,9 @@ def main():
     gps_file = sys.argv[2]                  # second program input param
 
     read_wx_data(wx_file, harbor_data)      # collect weather data
-    read_gps_data(gps_file, harbor_data)    # collect gps data
-    plot_figs(harbor_data)                  # display figures
+    read_gps_data(gps_file, harbor_data)
+    split_data(harbor_data,ascent_data,descent_data)
+    plot_figs(ascent_data, descent_data, harbor_data)                  # display figures
 
 
 if __name__ == '__main__':
