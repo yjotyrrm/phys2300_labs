@@ -44,12 +44,20 @@ def main():
     """
     """
     # 1) Parse the arguments
-
+    parser = argparse.ArgumentParser(description="get the starting conditions")
+    parser.add_argument('velocity', type=float)
+    parser.add_argument('angle', type=float)
+    parser.add_argument("--height", type=float, default=1.2)
+    args = parser.parse_args()
     # Set Variables
     data = {}       # empty dictionary for all data and variables
-#    data['init_height'] = args.height   # y-axis
-#    data['init_velocity'] = args.velocity  # m/s
-#    data['theta'] = args.angle       # degrees
+    data['init_velocity'] = args.velocity
+    data['theta'] = args.angle
+    data['init_height'] = args.height
+
+    print(data['init_velocity'])
+    print(data['theta'])
+    print(data['init_height'])
     # Constants
     data['rho'] = 1.225  # kg/m^3
     data['Cd'] = 0.5    # coefficient friction
