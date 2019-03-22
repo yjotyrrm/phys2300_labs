@@ -1,7 +1,8 @@
 from vpython import *
+from matplotlib import pyplot as plt
 from math import sin, cos
 import argparse
-
+import math
 
 
 def set_scene(data):
@@ -18,7 +19,7 @@ def set_scene(data):
     scene.forward = vector(0, -.3, -1)
     scene.x = -1
     # Set background: floor, table, etc
-
+    floor = box(pos = vector(0,0,0), length = 3000, width = 20, height = .1, color = color.white)
 
 def motion_no_drag(data):
     """
@@ -29,15 +30,58 @@ def motion_no_drag(data):
     # Follow the movement of the ball
     scene.camera.follow(ball_nd)
     # Set initial velocity & position
-
+    ball_nd.theta = math.radians(data['theta'])
+    ball_nd.mag = data['init_velocity']
+    ball_nd.vy = ball_nd.mag * math.sin(ball_nd.theta)
+    ball_nd.vx = ball_nd.mag * math.cos(ball_nd.theta)
+    ball_nd.v = vector(ball_nd.vx,ball_nd.vy,0)
     # Animate
+    while ball_nd.pos.y > 0:
+        rate(1/data['deltat'])
+        g = vector(0,data['gravity']*data['deltat'],0)
+        data['nd_pos_x'].append(ball_nd.pos.x)
+        data['nd_pos_y'].append(ball_nd.pos.y)
+        ball_nd.v += g
+        ball_nd.pos += ball_nd.v
+
+
 
 
 def motion_drag(data):
-    """
-    Create animation for projectile motion with no dragging force
-    """
-    pass
+    ball_d = sphere(pos=vector(-25, data['init_height'], 0),
+                     radius=1, color=color.red, make_trail=True)
+
+    ball_d.theta = math.radians(data['theta'])
+    ball_d.mag = data['init_velocity']
+    ball_d.vy = ball_d.mag * math.sin(ball_d.theta)
+    ball_d.vx = ball_d.mag * math.cos(ball_d.theta)
+    ball_d.v = vector(ball_d.vx, ball_d.vy, 0)
+
+    while ball_d.pos.y > 0:
+        rate(1/data['deltat'])
+        g = vector(0,data['gravity']*data['deltat'],0)
+
+        d_mag = data['beta']
+
+        data['d_pos_x'].append(ball_d.pos.x)
+        data['d_pos_y'].append(ball_d.pos.y)
+        #adding pi to an angle in radians turns around, by rotating it 180 degrees.
+        d_y = d_mag * math.sin(ball_d.theta + math.pi)
+        d_x = d_mag * math.cos(ball_d.theta + math.pi)
+        d = vector(d_x, d_y, 0)
+
+        ball_d.v += g
+        ball_d.v += d
+
+        ball_d.pos += ball_d.v
+
+def plot_data(data):
+
+    plt.figure()
+    plt.plot(data['d_pos_x'],data['d_pos_y'])
+    plt.plot(data['nd_pos_x'], data['nd_pos_y'])
+    plt.show()
+
 
 
 def main():
@@ -51,6 +95,11 @@ def main():
     args = parser.parse_args()
     # Set Variables
     data = {}       # empty dictionary for all data and variables
+
+    data['nd_pos_x'] = []
+    data['d_pos_x'] = []
+    data['nd_pos_y'] = []
+    data['d_pos_y'] = []
     data['init_velocity'] = args.velocity
     data['theta'] = args.angle
     data['init_height'] = args.height
@@ -70,13 +119,13 @@ def main():
     data['alpha'] = data['rho'] * data['Cd'] * data['ball_area'] / 2.0
     data['beta'] = data['alpha'] / data['ball_mass']
     # Set Scene
-#    set_scene(data)
+    set_scene(data)
     # 2) No Drag Animation
-#    motion_no_drag(data)
+    motion_no_drag(data)
     # 3) Drag Animation
-#     motion_drag(data)
+    motion_drag(data)
     # 4) Plot Information: extra credit
-#     plot_data(data)
+    plot_data(data)
 
 
 if __name__ == "__main__":
