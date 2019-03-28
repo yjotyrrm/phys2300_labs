@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def f_x(x, t):
+def f(x, t):
     """
     Euler's method
     """
@@ -24,10 +24,10 @@ def main():
     for t in tpoints:
         xpoints.append(x)
         # Calculate the 4th Order Rung-Kutta
-        k1 = h*f_x(x,t)
-        k2 = h*f_x(x + 0.5*k1, t + 0.5*h)
-        k3 = h*f_x(x + 0.5*k2, t + 0.5*h)
-        k4 = h*f_x(x+k3, t+h)
+        k1 = h*f(x,t)
+        k2 = h*f(x + 0.5*k1, t + 0.5*h)
+        k3 = h*f(x + 0.5*k2, t + 0.5*h)
+        k4 = h*f(x+k3, t+h)
         x += (k1 + 2*k2 + 2*k3 + k4)/6
 
     # Plot Values
