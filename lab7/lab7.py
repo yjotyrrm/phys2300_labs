@@ -2,14 +2,15 @@ import argparse
 from vpython import *
 import pandas as pd
 
-class body:
+class Body:
 
     def __init__(self,pos,vel,mass,name):
         self.pos = pos
         self.vel = vel
+        self.mass = mass
         self.name = name
         #make a vpython object for this body
-        self.ball = sphere(pos = self.pos, radius = .01, color = color.yellow)
+        self.ball = sphere(pos = self.pos, radius = 10*10, color = color.yellow)
 
     #update the position of the vpython wrapper
     def render(self):
@@ -18,7 +19,6 @@ class body:
 
     #use the leapfrog method to update velocity and position
     def leapfrog_pos(self,step,a):
-
         self.pos += self.vel*step + .5*a*step**2
 
     def leapfrog_vel(self,step, a, a1):
@@ -50,7 +50,7 @@ class body:
         :return: the net acceleration vector on this body
         """
         #make a list of all bodies other than this one
-        others = bodies
+        others = bodies.copy()
         others.remove(self)
         netf = vector(0,0,0)
         for body in others:
@@ -68,7 +68,7 @@ def get_alist(bodies):
     for body in bodies:
         alist.append(body.get_net_accel(bodies))
 
-    return bodies
+    return alist
 
 
 def update(bodies, step, alist):
@@ -103,7 +103,6 @@ def mass_center(bodies):
 def main():
     """
     """
-
     #initialize framerate and such
     fps = 100
     steps_per_frame = 10
@@ -111,27 +110,41 @@ def main():
     parser = argparse.ArgumentParser(description="get the input file")
     parser.add_argument('data')
     args = parser.parse_args()
-    print(args.data)
-    data = pd.read_csv(args.data, engine='python')
-    print(data)
+
+
+    with open(args.data) as file:
+        data = []
+        next(file)
+        next(file)
+
+        for line in file:
+            data.append(line.split(','))
+
+        file.close()
+
+    # bodge solution for adding mass to situation
+    masses = [3.25 * 10.0 ** 23.0,4.867 * 10.0 ** 24.0,6.054 * 10.0 ** 24.0,6.34 * 10.0 ** 23.0,1.898 * 10.0 ** 27.0,5.683 * 10.0 ** 26.0,8.681 * 10.0 ** 25.0,1.024 * 10.0 ** 26.0,1.309 * 10.0 ** 22.0]
+
     #list of bodies in system
     bodies = []
+    data = data[:-1]
+    for i, body in enumerate(data):
+        bodies.append(Body(vector(float(body[1]),float(body[2]),float(body[3]))*1.496*10**11,vector(float(body[4]),float(body[5]),float(body[6]))*1.496*10**11,masses[i],body[0]))
 
-    for i, row in data.iterrows():
-        print(row['Mercury'])
 
-"""
+
+
     #loop over the time inteval
     t = 0
     dt = 1
 
     alist = get_alist(bodies)
     while dt < 1000:
-        rate(1/fps*steps_per_frame)
+        rate(fps*steps_per_frame)
         #as the alist for t(n+1) is needed for calculation, I am returning it as alist so that it does not repeat the calculation
         alist = update(bodies, dt, alist)
+        print(bodies[0].pos, bodies[0].ball.pos)
 
-"""
 
 if __name__ == "__main__":
     main()

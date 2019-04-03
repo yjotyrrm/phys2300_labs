@@ -7,7 +7,7 @@ g = 9.81    # m/s**2
 l = 0.1     # meters
 W = 0.002   # arm radius
 R = 0.01     # ball radius
-framerate = 100
+framerate = 30
 steps_per_frame = 10
 
 def f(r):
