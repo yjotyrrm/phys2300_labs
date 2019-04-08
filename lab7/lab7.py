@@ -10,7 +10,7 @@ class Body:
         self.mass = mass
         self.name = name
         #make a vpython object for this body
-        self.ball = sphere(pos = self.pos, radius = 10*10, color = color.yellow)
+        self.ball = sphere(pos = self.pos, radius = .1, color = color.yellow)
 
     #update the position of the vpython wrapper
     def render(self):
@@ -24,24 +24,24 @@ class Body:
     def leapfrog_vel(self,step, a, a1):
         self.vel += .5*(a+a1)*step
 
-    def get_force_vector(self, other):
+    def get_accel_vector(self, other):
         """
         :param other: the other object
-        :return: a vector representing the force of gravity acting on this object as a result of other
+        :return: a vector representing the acceleration due to gravity acting on this object as a result of other
         """
-        G = 6.67 * 10**-11
+        #this is g converted to au^3/kg*s, rather than m^3/kg*s, since aus are the units I'm using
+        G =2.99*10**-34
         between = other.pos - self.pos
 
-        #calculate the magnitude of the force
-        mag = (G * self.mass * other.mass) / between.mag**3
+        mag = (G * other.mass) / between.mag**2
 
-        #get the unit vector pointing in the direction of between
+
+
         dir = between.hat
 
-        #multiply it by magnitude to get the force vector
-        force = dir*mag
+        accel = dir*mag
 
-        return force
+        return accel
 
     def get_net_accel(self,bodies):
         """
@@ -52,11 +52,11 @@ class Body:
         #make a list of all bodies other than this one
         others = bodies.copy()
         others.remove(self)
-        netf = vector(0,0,0)
+        netaccel = vector(0,0,0)
         for body in others:
-            netf += self.get_force_vector(body)
+            netaccel += self.get_accel_vector(body)
 
-        return netf/self.mass
+        return netaccel
 
 def get_alist(bodies):
     """
@@ -71,7 +71,7 @@ def get_alist(bodies):
     return alist
 
 
-def update(bodies, step, alist):
+def leapfrog_update(bodies, step, alist):
     """
 
     :param bodies: list of bodies in system
@@ -91,24 +91,50 @@ def update(bodies, step, alist):
 
     return new_alist
 
+def standard_update(bodies, step):
+    alist = get_alist(bodies)
+    for i, body in enumerate(bodies):
+        body.vel += alist[i]
+        body.pos += body.vel
+        body.render()
+
+
 
 def mass_center(bodies):
     """
-
+    calculate the center of mass / center of momentum of the system, and make it so that its initial position and velocity is 0.
     :param bodies: a list containing all the bodies in the system
-    :return: a position and velocity vector, representing the center of mass of the system
     """
-    pass
+
+    total_mass = 0
+    weighted_pos = vector(0,0,0)
+    weighted_vel = vector(0,0,0)
+    for i in bodies:
+        weighted_pos += i.pos*i.mass
+        weighted_vel += i.vel*i.mass
+        total_mass += i.mass
+
+    center_pos = weighted_pos/total_mass
+    center_vel = weighted_vel/total_mass
+
+    for i in bodies:
+        i.pos -= center_pos
+        i.vel -= center_vel
+
+        
+
+
 
 def main():
     """
     """
     #initialize framerate and such
-    fps = 100
-    steps_per_frame = 10
+    fps = 30
+    steps_per_frame = 2
 
     parser = argparse.ArgumentParser(description="get the input file")
-    parser.add_argument('data')
+    parser.add_argument('--data', required = True)
+    parser.add_argument('--leapfrog', type = bool, default=False)
     args = parser.parse_args()
 
 
@@ -122,28 +148,39 @@ def main():
 
         file.close()
 
-    # bodge solution for adding mass to situation
-    masses = [3.25 * 10.0 ** 23.0,4.867 * 10.0 ** 24.0,6.054 * 10.0 ** 24.0,6.34 * 10.0 ** 23.0,1.898 * 10.0 ** 27.0,5.683 * 10.0 ** 26.0,8.681 * 10.0 ** 25.0,1.024 * 10.0 ** 26.0,1.309 * 10.0 ** 22.0]
+
 
     #list of bodies in system
     bodies = []
     data = data[:-1]
     for i, body in enumerate(data):
-        bodies.append(Body(vector(float(body[1]),float(body[2]),float(body[3]))*1.496*10**11,vector(float(body[4]),float(body[5]),float(body[6]))*1.496*10**11,masses[i],body[0]))
+        bodies.append(Body(vector(float(body[1]),float(body[2]),float(body[3])),vector(float(body[4]),float(body[5]),float(body[6])),float(body[7]),body[0]))
 
-
+    #manually add the sun to the simulation
+    bodies.append(Body(vector(0,0,0),vector(0,0,0),1.989*10**30,'sun'))
 
 
     #loop over the time inteval
     t = 0
     dt = 1
+    end_time = 1000
 
     alist = get_alist(bodies)
-    while dt < 1000:
-        rate(fps*steps_per_frame)
-        #as the alist for t(n+1) is needed for calculation, I am returning it as alist so that it does not repeat the calculation
-        alist = update(bodies, dt, alist)
-        print(bodies[0].pos, bodies[0].ball.pos)
+
+    if(args.leapfrog):
+        print('leapfrog')
+        while t < end_time:
+            rate(fps * steps_per_frame)
+            # as the alist for t(n+1) is needed for calculation, I am returning it as alist so that it does not repeat the calculation
+            alist = leapfrog_update(bodies, dt, alist)
+    else:
+        print('standard')
+        while t < end_time:
+            rate(fps * steps_per_frame)
+            standard_update(bodies,dt)
+
+
+
 
 
 if __name__ == "__main__":
