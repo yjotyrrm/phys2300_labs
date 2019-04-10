@@ -13,9 +13,10 @@ class Body:
         #make a vpython object for this body
         self.ball = sphere(pos = self.pos, radius = self.radius, color = color.yellow, make_trail = True)
 
-    #update the position of the vpython wrapper
+    #update the position of the vpython object
     def render(self):
         self.ball.pos = self.pos
+        pass
 
 
     #use the leapfrog method to update velocity and position
@@ -121,11 +122,12 @@ def mass_center(bodies):
     center_pos = weighted_pos/total_mass
     center_vel = weighted_vel/total_mass
 
+    print(center_pos,center_vel)
     for i in bodies:
         i.pos -= center_pos
         i.vel -= center_vel
 
-        
+
 
 
 
@@ -163,12 +165,13 @@ def main():
 
     #manually add the sun to the simulation
     bodies.append(Body(vector(0,0,0),vector(0,0,0),1.989*10**30,'sun',.2))
-
-
+    #shift the 0,0 coordinate to be the center of mass of the solar system
+    mass_center(bodies)
+    mass_center(bodies)
     #loop over the time inteval
     t = 0
     dt = 1
-    end_time = 1000
+    end_time = 365.25*10**3
 
     alist = get_alist(bodies)
 
@@ -181,6 +184,7 @@ def main():
             alist = leapfrog_update(bodies, dt, alist)
             t+=dt
 
+
     else:
         print('standard')
         while t < end_time:
@@ -189,6 +193,7 @@ def main():
             t+=dt
 
 
+    mass_center(bodies)
 
 
 
