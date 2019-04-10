@@ -1,16 +1,17 @@
 import argparse
 from vpython import *
-import pandas as pd
+
 
 class Body:
 
-    def __init__(self,pos,vel,mass,name):
+    def __init__(self,pos,vel,mass,name, radius):
         self.pos = pos
         self.vel = vel
         self.mass = mass
         self.name = name
+        self.radius = radius
         #make a vpython object for this body
-        self.ball = sphere(pos = self.pos, radius = .1, color = color.yellow)
+        self.ball = sphere(pos = self.pos, radius = self.radius, color = color.yellow, make_trail = True)
 
     #update the position of the vpython wrapper
     def render(self):
@@ -30,7 +31,7 @@ class Body:
         :return: a vector representing the acceleration due to gravity acting on this object as a result of other
         """
         #this is g converted to au^3/kg*s, rather than m^3/kg*s, since aus are the units I'm using
-        G =2.99*10**-34
+        G =1.36*10**-34
         between = other.pos - self.pos
 
         mag = (G * other.mass) / between.mag**2
@@ -51,7 +52,9 @@ class Body:
         """
         #make a list of all bodies other than this one
         others = bodies.copy()
-        others.remove(self)
+
+        if self in others:
+            others.remove(self)
         netaccel = vector(0,0,0)
         for body in others:
             netaccel += self.get_accel_vector(body)
@@ -65,6 +68,7 @@ def get_alist(bodies):
     :return: list of net accelerations for all bodies, same length as bodies
     """
     alist = []
+
     for body in bodies:
         alist.append(body.get_net_accel(bodies))
 
@@ -130,11 +134,12 @@ def main():
     """
     #initialize framerate and such
     fps = 30
-    steps_per_frame = 2
+    steps_per_frame = 10
 
     parser = argparse.ArgumentParser(description="get the input file")
     parser.add_argument('--data', required = True)
     parser.add_argument('--leapfrog', type = bool, default=False)
+    parser.add_argument('--visualise', type = bool, default=True)
     args = parser.parse_args()
 
 
@@ -154,10 +159,10 @@ def main():
     bodies = []
     data = data[:-1]
     for i, body in enumerate(data):
-        bodies.append(Body(vector(float(body[1]),float(body[2]),float(body[3])),vector(float(body[4]),float(body[5]),float(body[6])),float(body[7]),body[0]))
+        bodies.append(Body(vector(float(body[1]),float(body[2]),float(body[3])),vector(float(body[4]),float(body[5]),float(body[6])),float(body[7]),body[0],.1))
 
     #manually add the sun to the simulation
-    bodies.append(Body(vector(0,0,0),vector(0,0,0),1.989*10**30,'sun'))
+    bodies.append(Body(vector(0,0,0),vector(0,0,0),1.989*10**30,'sun',.2))
 
 
     #loop over the time inteval
@@ -167,17 +172,21 @@ def main():
 
     alist = get_alist(bodies)
 
+
     if(args.leapfrog):
         print('leapfrog')
         while t < end_time:
             rate(fps * steps_per_frame)
             # as the alist for t(n+1) is needed for calculation, I am returning it as alist so that it does not repeat the calculation
             alist = leapfrog_update(bodies, dt, alist)
+            t+=dt
+
     else:
         print('standard')
         while t < end_time:
             rate(fps * steps_per_frame)
             standard_update(bodies,dt)
+            t+=dt
 
 
 
