@@ -1,6 +1,11 @@
 import argparse
+import sys
 import csv
+from main_window import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 
+data = []
+tags = []
 
 def column(list, index):
     """
@@ -16,7 +21,7 @@ def column(list, index):
 
     return column
 
-def add_tags(filename, tags, data):
+def add_tags(filename):
 
     #get the first column of data, which is a list of the filenames
     filenames = column(data, 0)
@@ -32,7 +37,8 @@ def add_tags(filename, tags, data):
         for i in tags:
            row.append(i)
 
-def remove_tags(filename, tags, data):
+
+def remove_tags(filename):
 
     filenames = column(data, 0)
     if not (filename in filenames):
@@ -46,7 +52,7 @@ def remove_tags(filename, tags, data):
                 print(tag +' is not a tag for ' + filename)
 
 
-def get_tags(filename, data):
+def get_tags(filename):
     """
 
     :param filename: the filename for which you want associated tags
@@ -60,7 +66,8 @@ def get_tags(filename, data):
         row = data[filenames.index(filename)]
 
         return row[1:]
-def search(tags, data):
+
+def search(taglist):
     """
 
     :param tags: the tags you want
@@ -70,7 +77,7 @@ def search(tags, data):
     names = []
     for row in data:
         match = True
-        for tag in tags:
+        for tag in taglist:
             if not (tag in row):
                 match = False
 
@@ -90,20 +97,56 @@ def update_file(data, file):
 
     with open(file, 'w') as f:
         writer = csv.writer(f)
+
         writer.writerows(data)
 
         f.close()
 
+def update_tags(data, tags):
+    """
+    get a list of each unique tag in the database
+    :param data:
+    :return:
+    """
+    temp =  []
+    for i in data:
+        #cut off the first index, which is the filename, not a path
+        e = i[1:]
 
+        temp = temp + e
+
+    tags = list(set(tags))
+
+def predict_tags(text):
+    """
+    :param text: the raw text in the textbox
+    :param tags: the list of applicable tags
+    :return: a list of up to seven possible tags
+    """
+    possibles = []
+    words = text.split()
+    if words == []:
+        return []
+    else:
+        snippet = words[-1]
+        length = len(snippet)
+
+        for i in tags:
+            if i[:length] == snippet:
+                possibles.append(i)
+
+        return possibles[:7]
 
 
 def main():
 
     parser = argparse.ArgumentParser(description= 'get_data')
     parser.add_argument('--file', required=True)
-    parser.parse_args()
-    data = []
-    with open(parser.file) as file:
+    args = parser.parse_args()
+
+
+
+    with open(args.file) as file:
 
         for line in file:
 
@@ -111,5 +154,24 @@ def main():
 
         file.close()
 
+    update_tags(data, tags)
+
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
+
 if __name__ == '__main__':
+    sys._excepthook = sys.excepthook
+
+
+    def exception_hook(exctype, value, traceback):
+        print(exctype, value, traceback)
+        sys._excepthook(exctype, value, traceback)
+        sys.exit(1)
+
+
+    sys.excepthook = exception_hook
     main()
