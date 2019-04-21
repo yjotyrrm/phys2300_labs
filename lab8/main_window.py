@@ -10,6 +10,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from magic_cabinet import *
 class Ui_MainWindow(object):
 
+    def file_open(self):
+
+        fname = QtWidgets.QFileDialog.getOpenFileName()
+
+        add_file(fname)
+
     def show_suggestions(self):
         print('gothere')
         text = self.SearchBar.text()
@@ -31,7 +37,9 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.SearchLabel, 2, 0, 1, 1)
         self.SearchBar = QtWidgets.QLineEdit(self.centralwidget)
         self.SearchBar.setObjectName("SearchBar")
+
         self.SearchBar.textChanged.connect(self.show_suggestions)
+
         self.gridLayout.addWidget(self.SearchBar, 2, 1, 1, 1)
         self.SuggestionBox = QtWidgets.QListWidget(self.centralwidget)
         self.SuggestionBox.setObjectName("SuggestionBox")
@@ -48,12 +56,18 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.actionAdd_File = QtWidgets.QAction(MainWindow)
         self.actionAdd_File.setObjectName("actionAdd_File")
+
+        self.actionAdd_File.triggered.connect(self.file_open)
+
         self.actionRemove_File = QtWidgets.QAction(MainWindow)
         self.actionRemove_File.setObjectName("actionRemove_File")
         self.actionUpdate_Backup = QtWidgets.QAction(MainWindow)
         self.actionUpdate_Backup.setObjectName("actionUpdate_Backup")
         self.actionSave = QtWidgets.QAction(MainWindow)
         self.actionSave.setObjectName("actionSave")
+
+        self.actionSave.triggered.connect(update_file)
+
         self.menuAdd_File.addAction(self.actionAdd_File)
         self.menuAdd_File.addAction(self.actionSave)
         self.menuAdd_File.addAction(self.actionUpdate_Backup)

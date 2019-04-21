@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 data = []
 tags = []
+datafile = 'tagdata.csv'
 
 def column(list, index):
     """
@@ -21,36 +22,46 @@ def column(list, index):
 
     return column
 
-def add_tags(filename):
+def add_tag(filename, tag):
 
     #get the first column of data, which is a list of the filenames
     filenames = column(data, 0)
-    if filename in filenames:
-        row = data[filenames.index(filename)]
-
-        for i in tags:
-            row.append(i)
-
+    if not (filename in filenames):
+        print('that filename does not exist')
     else:
-        row = data.append([filename])
+        row = data[filenames.index(filename)]
+        if tag in row:
+            print('that tag is already there')
+        else:
+            row.append(tag)
 
-        for i in tags:
-           row.append(i)
 
-
-def remove_tags(filename):
+def remove_tag(filename, tag):
 
     filenames = column(data, 0)
     if not (filename in filenames):
         print('that filename does not exist')
     else:
         row = data[filenames.index(filename)]
-        for tag in tags:
-            if tag in row:
-                row.remove(tag)
-            else:
-                print(tag +' is not a tag for ' + filename)
+        if tag in row:
+            row.remove(tag)
+        else:
+            print(tag +' is not a tag for ' + filename)
 
+
+def add_file(filename):
+    filenames = column(data,0)
+    if filename in filenames:
+        print('that file is already in the system')
+    else:
+        data.append([filename])
+
+def remove_file(filename):
+    filenames = column(data,0)
+    if filename in filenames:
+        del data[filenames.index(filename)]
+    else:
+        print('that file is not in the system')
 
 def get_tags(filename):
     """
@@ -89,13 +100,13 @@ def search(taglist):
 
 
 
-def update_file(data, file):
+def update_file():
     """
     writes the data with updates to the csv file
     :param data: the 2d list of all data
     """
 
-    with open(file, 'w') as f:
+    with open(datafile, 'w') as f:
         writer = csv.writer(f)
 
         writer.writerows(data)
@@ -144,7 +155,8 @@ def main():
     parser.add_argument('--file', required=True)
     args = parser.parse_args()
 
-
+    global datafile
+    datafile = args.file
 
     with open(args.file) as file:
 
