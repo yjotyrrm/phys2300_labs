@@ -7,24 +7,47 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from tagviewer import Ui_TagViewer
+import sys
 
 class Ui_Search_Results(object):
-    def setupUi(self, Search_Results):
+
+    def populate_results(self):
+        if(self.filenames != []):
+            for i in self.filenames:
+                self.ResultList.addItem(i)
+        else:
+            self.ResultList.addItem('there are no documents with that combination of tags')
+    def open_tagviewer(self, item):
+
+        self.window = QtWidgets.QWidget()
+        viewer = Ui_TagViewer()
+        viewer.setupUi(self.window, item, self.cabinet)
+        self.window.show()
+
+
+    def setupUi(self, Search_Results, filenames, cabinet):
+        self.filenames = filenames
+        self.cabinet = cabinet
         Search_Results.setObjectName("Search_Results")
-        Search_Results.resize(724, 442)
-        self.gridLayout = QtWidgets.QGridLayout(Search_Results)
-        self.gridLayout.setObjectName("gridLayout")
-        self.label = QtWidgets.QLabel(Search_Results)
-        self.label.setMaximumSize(QtCore.QSize(59, 17))
-        self.label.setText("")
-        self.label.setObjectName("label")
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
-        self.ExitButton = QtWidgets.QPushButton(Search_Results)
-        self.ExitButton.setObjectName("ExitButton")
-        self.gridLayout.addWidget(self.ExitButton, 1, 1, 1, 1)
+        Search_Results.resize(742, 453)
+        self.verticalLayout = QtWidgets.QVBoxLayout(Search_Results)
+        self.verticalLayout.setObjectName("verticalLayout")
         self.ResultList = QtWidgets.QListWidget(Search_Results)
         self.ResultList.setObjectName("ResultList")
-        self.gridLayout.addWidget(self.ResultList, 0, 1, 1, 1)
+
+        #no idea why I can't just pass open_tagviewer directly, but I can't and this works
+        self.ResultList.itemClicked.connect(lambda: self.open_tagviewer(self.ResultList.currentItem().text()))
+
+        self.verticalLayout.addWidget(self.ResultList)
+        self.ExitButton = QtWidgets.QPushButton(Search_Results)
+        self.ExitButton.setObjectName("ExitButton")
+
+        self.ExitButton.clicked.connect(Search_Results.close)
+
+        self.verticalLayout.addWidget(self.ExitButton)
+
+        self.populate_results()
 
         self.retranslateUi(Search_Results)
         QtCore.QMetaObject.connectSlotsByName(Search_Results)
@@ -33,6 +56,7 @@ class Ui_Search_Results(object):
         _translate = QtCore.QCoreApplication.translate
         Search_Results.setWindowTitle(_translate("Search_Results", "Form"))
         self.ExitButton.setText(_translate("Search_Results", "Back"))
+
 
 
 if __name__ == "__main__":
